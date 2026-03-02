@@ -52,7 +52,7 @@ The two builds diverge significantly in their hardware choices, which cascades i
 
 ---
 
-# the Sweet Potato build — Sweet Potato (Libre Computer AML-S905X-CC-V2)
+# Sweet Potato — Libre Computer AML-S905X-CC-V2
 
 > **Author:** Luca · `mycamera@sweet-potato`  
 > **Project name:** Tender Camera  
@@ -370,7 +370,6 @@ Touch targets must be at least 44×44px. Aesthetic: permacomputing-inspired — 
 
 ---
 
-# the Orange Pi 5 build — Orange Pi 5 (Rockchip RK3588S)
 
 > **Author:** René
 > 
@@ -731,3 +730,1005 @@ The ADS7846-X11-daemon is by Tomasz Mankowski — see the [original repository](
 ---
 
 *Contributions and corrections welcome via GitHub Issues.*
+# Orange Pi 5 — Rockchip RK3588S
+
+> **Author:** René
+>
+> A step-by-step guide to building a DIY camera using the Orange Pi 5 SBC with an OV13850 MIPI camera module, Waveshare 3.5" HDMI touchscreen display, and a custom Python camera application.
+
+---
+
+## Table of Contents
+
+1. [Project Overview](#1-project-overview)
+2. [Hardware Requirements](#2-hardware-requirements)
+3. [Software & System Info](#3-software--system-info)
+4. [Reference Documents & Links](#4-reference-documents--links)
+5. [Wiring Reference](#5-wiring-reference)
+6. [Step 1 — OS Setup](#6-step-1--os-setup)
+7. [Step 2 — Camera Setup](#7-step-2--camera-setup)
+8. [Step 3 — Display Setup](#8-step-3--display-setup)
+9. [Step 4 — Touch Input Setup](#9-step-4--touch-input-setup)
+10. [Step 5 — Camera App Installation](#10-step-5--camera-app-installation)
+11. [Step 6 — Autostart Configuration](#11-step-6--autostart-configuration)
+12. [Troubleshooting](#12-troubleshooting)
+13. [Known Limitations](#13-known-limitations)
+14. [FAQ](#14-faq)
+15. [Changelog](#15-changelog)
+
+---
+
+## 1. Project Overview
+
+This guide documents the full process of building a standalone DIY camera based on the **Orange Pi 5** single-board computer. The system consists of:
+
+- A **13MP OV13850 MIPI camera** for photo and video capture
+- A **3.5" Waveshare HDMI LCD** as a live preview display
+- **Resistive touchscreen** input via the XPT2046/ADS7846 controller driven by a userspace SPI daemon
+- A **custom Python camera application** with live preview, photo capture, and video recording
+
+The goal is a fully self-contained camera that works without a keyboard or mouse, using only touch input for operation.
+
+> 📸 **[Photo placeholder — insert hardware overview photo here]**
+
+> 🎬 **[Video demo placeholder — insert YouTube link here]**
+
+---
+
+## 2. Hardware Requirements
+
+| Component | Model / Details |
+|---|---|
+| SBC | Orange Pi 5 (RK3588S) |
+| Camera Module | OV13850 13MP MIPI — official Orange Pi module |
+| Camera Cable | FPC ribbon cable (included with camera module) |
+| Display | Waveshare 3.5" HDMI LCD (B) — 800×480 IPS resistive touch |
+| Display Connection | HDMI cable + 26-pin GPIO header |
+| Power | 5V/4A USB-C power supply |
+| Storage | MicroSD card (16GB+) or eMMC |
+| Optional | USB keyboard and mouse (for initial setup only) |
+
+### Notes on hardware
+
+- The **FPC ribbon cable** is fragile and a common failure point. If the camera is not detected, try a replacement cable before assuming software issues.
+- The Waveshare display uses **HDMI for video** and the **26-pin GPIO header for touch** (SPI). The micro USB port on the display is power only — it does NOT carry touch data.
+- The touch controller is **XPT2046** (compatible with ADS7846 driver).
+
+---
+
+## 3. Software & System Info
+
+| Item | Details |
+|---|---|
+| OS Image | `Orangepi5_1.2.2_ubuntu_jammy_desktop_xfce_linux6.1.99` |
+| OS | Ubuntu 22.04 LTS (Jammy) |
+| Kernel | `6.1.99-rockchip-rk3588` |
+| Desktop | XFCE |
+| Python | 3.10 |
+| GStreamer | 1.20.3 |
+| OpenCV | 4.5.4 (python3-opencv) |
+
+### Download the OS image
+
+The official Orange Pi 5 Ubuntu image can be downloaded from:
+- [http://www.orangepi.org/html/hardWare/computerAndMicrocontrollers/service-and-support/Orange-pi-5.html](http://www.orangepi.org/html/hardWare/computerAndMicrocontrollers/service-and-support/Orange-pi-5.html)
+
+Flash using **balenaEtcher** or **Win32DiskImager** to a microSD card.
+
+---
+
+## 4. Reference Documents & Links
+
+### Official Documentation
+- **Orange Pi 5 Official Page & Manuals** — [orangepi.org](http://www.orangepi.org/html/hardWare/computerAndMicrocontrollers/service-and-support/Orange-pi-5.html)
+- **Waveshare 3.5" HDMI LCD Wiki & FAQ** — [waveshare.com](https://www.waveshare.com/wiki/3.5inch_HDMI_LCD#FAQ)
+
+### Drivers & Tools Used
+- **ADS7846-X11-daemon** (userspace SPI touch driver for Orange Pi) — [github.com/Tomasz-Mankowski/ADS7846-X11-daemon](https://github.com/Tomasz-Mankowski/ADS7846-X11-daemon)
+- **WiringOP** (GPIO library for Orange Pi) — [github.com/zhaolei/WiringOP](https://github.com/zhaolei/WiringOP)
+
+### Community Resources
+- **OV13850 Camera discussion for Orange Pi 5** — [reddit.com/r/OrangePI](https://www.reddit.com/r/OrangePI/comments/109cgz8/camera_for_orange_pi_5/)
+
+### Important Notes on Compatibility
+- The **Waveshare LCD-show** scripts ([github.com/waveshareteam/LCD-show](https://github.com/waveshareteam/LCD-show)) and **LCD-show-ubuntu** ([github.com/lcdwiki/LCD-show-ubuntu](https://github.com/lcdwiki/LCD-show-ubuntu)) are **Raspberry Pi specific** and will NOT work on Orange Pi 5.
+- The `waveshare-ads7846.dtbo` file distributed by Waveshare targets `brcm,bcm2835` and is **not compatible** with RK3588.
+- The ADS7846 kernel driver (`CONFIG_TOUCHSCREEN_ADS7846`) is **disabled** in the Orange Pi 6.1 kernel and cannot be used without recompiling the kernel. The userspace daemon approach used in this guide bypasses this limitation entirely.
+
+---
+
+## 5. Wiring Reference
+
+### 26-Pin GPIO Header — SPI4 Pinout (Touch)
+
+The Waveshare display connects to the Orange Pi 5 26-pin header. The relevant SPI4 (M0) pins are:
+
+| Physical Pin | Function | GPIO | WiringPi# | Display Signal |
+|---|---|---|---|---|
+| 19 | SPI4_TXD (MOSI) | GPIO1_B1 | — | TP_SI |
+| 21 | SPI4_RXD (MISO) | GPIO1_B0 | — | TP_SO |
+| 23 | SPI4_CLK | GPIO1_B2 | — | TP_SCK |
+| 24 | SPI4_CS1 | GPIO1_B4 | — | (CS bridge — see note) |
+| 22 | GPIO2_D4 | GPIO 92 | **13** | TP_IRQ |
+| 26 | PWM1 | GPIO 35 | **16** | TP_CS |
+| 6/9/14/20/25 | GND | — | — | GND |
+| 1/17 | 3.3V | — | — | VCC |
+
+> ⚠️ **Critical CS Pin Note:** The Waveshare display routes TP_CS to **pin 26** on the connector. However, SPI4_CS1 is on **pin 24**. The XPT2046 will not respond without CS being driven correctly.
+>
+> **Solution implemented in software:** The ADS7846-X11-daemon was modified to manually toggle pin 26 (WiringPi pin 16) as a software CS signal before and after each SPI transaction. This eliminates the need for any hardware bridging.
+
+### Camera Connector
+
+The OV13850 camera module connects to the **CAM1** port on the Orange Pi 5 board using the included FPC ribbon cable.
+
+> ⚠️ **CAM1 requires overlay `ov13850-c1`** — do not use c2 or c3 overlays for this connector.
+
+---
+
+## 6. Step 1 — OS Setup
+
+### 1.1 Flash the image
+
+Flash the Ubuntu 22.04 image to a microSD card. Default credentials:
+
+```
+Username: orangepi
+Password: orangepi
+```
+
+### 1.2 First boot
+
+Connect keyboard, mouse, and HDMI monitor. Complete initial setup and connect to your network.
+
+### 1.3 Update the system
+
+```bash
+sudo apt update && sudo apt upgrade -y
+```
+
+### 1.4 Enable SPI4 overlay
+
+Edit the boot configuration:
+
+```bash
+sudo nano /boot/orangepiEnv.txt
+```
+
+Add or modify the `overlays` line. Final value used in this project:
+
+```
+overlays=ov13850-c1 spi4-m0-cs1-spidev
+```
+
+> ⚠️ Do **not** add `spi4-m1-cs1-spidev` — the M1 mux conflicts with the ethernet interface and will cause the network adapter to disappear.
+
+Save and reboot:
+
+```bash
+sudo reboot
+```
+
+Verify SPI device appeared:
+
+```bash
+ls /dev/spidev4.1
+```
+
+---
+
+## 7. Step 2 — Camera Setup
+
+### 7.1 Connect the camera
+
+Connect the OV13850 module to the **CAM1** port using the FPC ribbon cable. Ensure the cable is fully seated and the latch is closed on both ends.
+
+> ⚠️ **FPC cable failure is the most common hardware issue.** If the camera is not detected after correct software setup, replace the cable first.
+
+### 7.2 Verify the overlay is loaded
+
+After reboot with `ov13850-c1` in overlays:
+
+```bash
+dmesg | grep ov13850
+```
+
+Expected output includes sensor ID `0x138500`:
+
+```
+ov13850 7-0010: driver version: 00.01.05
+ov13850 7-0010: Detected ov13850 sensor, CHIP ID = 0x138500
+```
+
+If you see `Unexpected sensor id(000000), ret(-5)` — the camera is not communicating. Check the FPC cable.
+
+### 7.3 Verify the video device
+
+```bash
+v4l2-ctl --list-devices
+```
+
+The correct capture device is:
+
+```
+rkisp_mainpath (platform:rkisp0-vir2):
+    /dev/video11
+```
+
+### 7.4 Test video capture
+
+```bash
+gst-launch-1.0 v4l2src device=/dev/video11 io-mode=4 ! \
+  video/x-raw,format=NV12,width=1920,height=1080,framerate=30/1 ! \
+  mpph264enc header-mode=1 bps=20000000 ! \
+  h264parse config-interval=-1 ! matroskamux ! \
+  filesink location=~/test.mkv
+```
+
+Press Ctrl+C to stop. Play with:
+
+```bash
+mpv ~/test.mkv
+```
+
+### 7.5 Supported resolutions
+
+The camera outputs up to **2112×1568** via the ISP mainpath (V4L2 limit). The physical sensor maximum is 4208×3120 but this requires ISP tuning beyond the scope of this guide.
+
+---
+
+## 8. Step 3 — Display Setup
+
+### 8.1 Physical connections
+
+1. Connect HDMI cable from display to Orange Pi 5
+2. Connect display 26-pin connector to Orange Pi 5 26-pin header (align pin 1)
+3. The micro USB on the display can be connected for power but is **not required**
+
+### 8.2 Display configuration
+
+The Waveshare 3.5" HDMI LCD is plug-and-play for video on Orange Pi 5. No additional configuration is needed — HDMI is detected automatically at 800×480.
+
+### 8.3 Verify display
+
+The display should show the XFCE desktop after boot. If it shows a white screen or no signal, check the HDMI cable connection.
+
+---
+
+## 9. Step 4 — Touch Input Setup
+
+### 9.1 Install dependencies
+
+```bash
+sudo apt install libx11-dev libxtst-dev -y
+```
+
+### 9.2 Install WiringOP
+
+```bash
+git clone https://github.com/zhaolei/WiringOP.git -b h3
+cd WiringOP
+chmod +x ./build
+./build
+```
+
+### 9.3 Clone and patch the ADS7846 daemon
+
+```bash
+git clone https://github.com/Tomasz-Mankowski/ADS7846-X11-daemon.git
+cd ADS7846-X11-daemon
+```
+
+Apply the required patches:
+
+**Patch 1 — Fix C++ pointer comparison (compile error fix):**
+
+```bash
+sed -i 's/if (gc < 0)/if (gc == nullptr)/' main.cpp
+```
+
+**Patch 2 — Increase calibration timeout (allows enough time to tap calibration points):**
+
+```bash
+sed -i 's/int waitTime = 5;/int waitTime = 60;/' main.cpp
+```
+
+**Patch 3 — Software CS on pin 26 (critical for Waveshare display):**
+
+```bash
+python3 - << 'EOF'
+content = open('ADS7846.cpp').read()
+content = content.replace(
+    '#include "ADS7846.h"',
+    '#include "ADS7846.h"\n#include <wiringPi.h>\n#define CS_PIN 16'
+)
+content = content.replace(
+    '\tioctl(spiHandler_, SPI_IOC_MESSAGE(1), spi_message);',
+    '\tpinMode(CS_PIN, OUTPUT);\n\tdigitalWrite(CS_PIN, LOW);\n\tioctl(spiHandler_, SPI_IOC_MESSAGE(1), spi_message);\n\tdigitalWrite(CS_PIN, HIGH);'
+)
+open('ADS7846.cpp', 'w').write(content)
+print('Done')
+EOF
+```
+
+### 9.4 Compile
+
+```bash
+make
+```
+
+### 9.5 Calibrate
+
+```bash
+sudo DISPLAY=:0.0 XAUTHORITY=/home/orangepi/.Xauthority \
+  bash -c 'cd /home/orangepi/ADS7846-X11-daemon && \
+  ./ADS7846-X11 --spi /dev/spidev4.1 --pin 13 --cal'
+```
+
+A fullscreen calibration window will appear. Tap each of the 3 cross targets accurately. After completion, verify the calibration file has real values (not `8191;8191`):
+
+```bash
+cat ~/ADS7846-X11-daemon/calibpoints.cal
+```
+
+Expected output (values will differ based on your calibration):
+
+```
+3458;3466
+2065;808
+684;2134
+```
+
+### 9.6 Test touch
+
+```bash
+sudo DISPLAY=:0.0 XAUTHORITY=/home/orangepi/.Xauthority \
+  bash -c 'cd /home/orangepi/ADS7846-X11-daemon && \
+  ./ADS7846-X11 --spi /dev/spidev4.1 --pin 13'
+```
+
+Touch the screen. The mouse cursor should follow your finger.
+
+---
+
+## 10. Step 5 — Camera App Installation
+
+### 10.1 Install Python dependencies
+
+```bash
+sudo apt install python3-opencv -y
+```
+
+Verify GStreamer Python bindings:
+
+```bash
+python3 -c "import gi; gi.require_version('Gst','1.0'); from gi.repository import Gst; Gst.init(None); print('OK')"
+```
+
+### 10.2 Install the camera app
+
+Download `camera_app.py` from this repository and copy to your home directory:
+
+```bash
+cp camera_app.py ~/camera_app.py
+```
+
+### 10.3 Run the camera app
+
+```bash
+python3 ~/camera_app.py /dev/video11
+```
+
+### 10.4 Controls
+
+| Key | Action |
+|---|---|
+| `P` | Take photo |
+| `V` | Start / stop video recording |
+| `S` | Open settings menu |
+| `Q` | Quit |
+
+In the settings menu:
+
+| Key | Action |
+|---|---|
+| `1–4` | Select resolution |
+| `6–8` | Select photo format (JPEG / PNG / TIFF) |
+| `A–B` | Select video format (MP4 H.264 / MKV H.264) |
+| `S` | Close settings |
+
+### 10.5 Output files
+
+All photos and videos are saved to:
+
+```
+~/Pictures/camera/
+```
+
+---
+
+## 11. Step 6 — Autostart Configuration
+
+### 11.1 Touch daemon autostart
+
+Create an autostart entry so the touch daemon launches automatically after login:
+
+```bash
+mkdir -p ~/.config/autostart
+cat > ~/.config/autostart/touch.desktop << 'EOF'
+[Desktop Entry]
+Type=Application
+Name=Touch Daemon
+Exec=bash -c 'sleep 8 && DISPLAY=:0.0 XAUTHORITY=/home/orangepi/.Xauthority cd /home/orangepi/ADS7846-X11-daemon && sudo ./ADS7846-X11 --spi /dev/spidev4.1 --pin 13'
+Hidden=false
+NoDisplay=false
+X-GNOME-Autostart-enabled=true
+EOF
+```
+
+Add sudoers rule so the daemon runs without a password prompt:
+
+```bash
+echo 'orangepi ALL=(ALL) NOPASSWD: /home/orangepi/ADS7846-X11-daemon/ADS7846-X11' | \
+  sudo tee /etc/sudoers.d/touch
+```
+
+The 8-second sleep gives the X session time to fully initialize before the daemon starts.
+
+### 11.2 Verify autostart
+
+Reboot and confirm touch works without manually starting the daemon:
+
+```bash
+sudo reboot
+```
+
+---
+
+## 12. Troubleshooting
+
+### Camera not detected — `Unexpected sensor id(000000), ret(-5)`
+
+The sensor is not responding to I2C. Causes in order of likelihood:
+
+1. **Faulty FPC cable** — the most common cause. Replace the ribbon cable.
+2. **Cable not fully seated** — power off, reseat both ends, close latches fully.
+3. **Wrong connector** — the camera must be in **CAM1**, not CAM2 or CAM3.
+4. **Wrong overlay** — verify `/boot/orangepiEnv.txt` contains `ov13850-c1`.
+
+### `/dev/spidev4.1` not appearing
+
+Check `/boot/orangepiEnv.txt` contains `spi4-m0-cs1-spidev` in the overlays line.
+
+> ⚠️ Never use `spi4-m1-cs1-spidev` — it conflicts with ethernet and removes the network interface.
+
+### Touch calibration returns `8191;8191`
+
+The XPT2046 is not returning real touch data. This is caused by the CS pin not being driven correctly. Ensure **Patch 3** (software CS on pin 26) was applied before compiling.
+
+### Touch always clicks top-left corner
+
+The calibration file contains bad data (`8191;8191`). Delete it and recalibrate:
+
+```bash
+sudo rm ~/ADS7846-X11-daemon/calibpoints.cal
+# Then run calibration again (Step 9.5)
+```
+
+### Ethernet disappears after reboot
+
+You enabled the wrong SPI overlay. Edit `/boot/orangepiEnv.txt` and change `spi4-m1-cs1-spidev` to `spi4-m0-cs1-spidev`, then reboot.
+
+### Camera app opens but shows no preview
+
+OpenCV cannot open the MIPI camera directly. The app uses a GStreamer pipeline with `io-mode=4`. Make sure `python3-opencv` is installed and GStreamer bindings are working (Step 10.1).
+
+### MP4 video file is corrupt / unplayable
+
+MP4 requires a clean EOS (end-of-stream) signal to finalize the moov atom. The camera app uses `gst-launch-1.0 -e` and sends `SIGINT` to the process group for a clean shutdown. If the process was killed forcefully, the MP4 will be unplayable. Use MKV format for more robust recording.
+
+### Touch daemon doesn't start after reboot
+
+The sleep delay may not be long enough for your system. Increase it:
+
+```bash
+nano ~/.config/autostart/touch.desktop
+# Change: sleep 8
+# To:     sleep 15
+```
+
+---
+
+## 13. Known Limitations
+
+| Limitation | Details |
+|---|---|
+| Max resolution via app | 2112×1568 (ISP V4L2 limit) |
+| No H.265 video | `mpph265enc` element not available in this GStreamer build |
+| No touch kernel driver | `CONFIG_TOUCHSCREEN_ADS7846` is disabled in the 6.1 kernel. Userspace daemon is used instead |
+| No kernel headers | `linux-headers` package not available for this custom kernel, preventing external module compilation |
+| Preview and recording share camera | A GStreamer `tee` pipeline is used so both preview and recording can use the camera simultaneously |
+| Touch calibration GUI | The calibration tool requires X11 and must be run with correct `DISPLAY` and `XAUTHORITY` environment variables |
+
+---
+
+## 14. FAQ
+
+**Q: Can I use a Raspberry Pi LCD-show script to set up the display?**
+No. Those scripts modify `/boot/config.txt` and install RPi-specific device tree overlays that are incompatible with Orange Pi / RK3588.
+
+**Q: Can I use the Waveshare `waveshare-ads7846.dtbo` overlay file?**
+No. That file targets `brcm,bcm2835` (Raspberry Pi SoC) and will not load on RK3588.
+
+**Q: Why is the ADS7846 kernel module not available?**
+The Orange Pi 6.1 kernel was compiled with `CONFIG_TOUCHSCREEN_ADS7846=n`. Enabling it requires recompiling the kernel from source, which also requires kernel headers that are not distributed for this image. The userspace daemon approach bypasses this entirely.
+
+**Q: Can I connect to CAM2 or CAM3 instead of CAM1?**
+Yes, but you must change the overlay accordingly: `ov13850-c2` for CAM2 or `ov13850-c3` for CAM3.
+
+**Q: Why does video recording freeze the preview?**
+It doesn't — the app uses a GStreamer `tee` to split the stream so preview and recording run simultaneously from the same camera pipeline.
+
+**Q: Can I add a physical shutter button?**
+Yes. The camera app includes optional GPIO button support via the `OPi.GPIO` library. Connect a button between physical pin 7 (GPIO1_C6, WiringPi 2) and any GND pin. Install `python3-opi.gpio` and the app will detect it automatically.
+
+---
+
+## 15. Camera App Source Code
+
+Save the following as `camera_app.py` in your home directory:
+
+```python
+#!/usr/bin/env python3
+"""
+OrangePi 5 Camera App
+- Live preview always on via GStreamer tee
+- Recording branches off tee without interrupting preview
+- Photos: JPEG, PNG, TIFF
+- Video:  MP4 H.264, MKV H.264
+- Keys:   P=photo  V=record/stop  S=settings  Q=quit
+- GPIO:   Pin 7 shutter (optional)
+"""
+
+import gi
+gi.require_version('Gst', '1.0')
+gi.require_version('GstApp', '1.0')
+from gi.repository import Gst, GstApp, GLib
+
+import cv2
+import numpy as np
+import threading
+import os
+import time
+import signal
+from datetime import datetime
+
+Gst.init(None)
+
+# ── Config ─────────────────────────────────────────────────────────────────────
+
+DEVICE   = "/dev/video11"
+SAVE_DIR = os.path.expanduser("~/Pictures/camera")
+
+RESOLUTIONS = [
+    ("2112x1568", 2112, 1568, 15),
+    ("1920x1080", 1920, 1080, 30),
+    ("1280x720",  1280,  720, 30),
+    ("720x576",    720,  576, 30),
+]
+
+PHOTO_FMTS = ["JPEG", "PNG", "TIFF"]
+VIDEO_FMTS = ["MP4 H.264", "MKV H.264"]
+
+# Colors BGR
+DARK   = (35,  35,  35)
+PANEL  = (50,  50,  50)
+WHITE  = (240, 240, 240)
+GRAY   = (120, 120, 120)
+GREEN  = (60,  200, 80)
+RED    = (40,  40,  220)
+YELLOW = (30,  210, 230)
+
+# ── GPIO ───────────────────────────────────────────────────────────────────────
+
+gpio_ok = False
+GPIO_PIN = 7
+try:
+    import OPi.GPIO as GPIO
+    GPIO.setmode(GPIO.BOARD)
+    GPIO.setup(GPIO_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+    gpio_ok = True
+except Exception:
+    pass
+
+# ── GStreamer pipeline ─────────────────────────────────────────────────────────
+
+class Camera:
+    def __init__(self, device, res_i):
+        self.device  = device
+        self.res_i   = res_i
+        self.frame   = None
+        self.lock    = threading.Lock()
+        self.rec     = False
+        self.rec_bin = None
+        self.pipeline= None
+        self.appsink = None
+        self.tee     = None
+        self.preview_queue = None
+        self._build()
+
+    def _build(self):
+        label, w, h, fps = RESOLUTIONS[self.res_i]
+
+        pipe_str = (
+            f"v4l2src device={self.device} io-mode=4 ! "
+            f"video/x-raw,format=NV12,width={w},height={h},framerate={fps}/1 ! "
+            f"tee name=t "
+            f"t. ! queue max-size-buffers=2 leaky=downstream ! "
+            f"videoconvert ! video/x-raw,format=BGR ! "
+            f"appsink name=preview emit-signals=true drop=true max-buffers=2 "
+            f"t. ! queue name=rec_queue max-size-buffers=2 leaky=downstream ! "
+            f"fakesink name=rec_sink"
+        )
+
+        self.pipeline = Gst.parse_launch(pipe_str)
+        self.appsink  = self.pipeline.get_by_name("preview")
+        self.tee      = self.pipeline.get_by_name("t")
+        self.rec_sink = self.pipeline.get_by_name("rec_sink")
+        self.rec_queue= self.pipeline.get_by_name("rec_queue")
+
+        self.appsink.connect("new-sample", self._on_frame)
+
+        bus = self.pipeline.get_bus()
+        bus.add_signal_watch()
+        bus.connect("message::error", self._on_error)
+
+        self.pipeline.set_state(Gst.State.PLAYING)
+
+    def _on_frame(self, sink):
+        sample = sink.emit("pull-sample")
+        if sample:
+            buf  = sample.get_buffer()
+            caps = sample.get_caps()
+            w    = caps.get_structure(0).get_value("width")
+            h    = caps.get_structure(0).get_value("height")
+            ok, mapinfo = buf.map(Gst.MapFlags.READ)
+            if ok:
+                arr = np.frombuffer(mapinfo.data, dtype=np.uint8).reshape((h, w, 3)).copy()
+                buf.unmap(mapinfo)
+                with self.lock:
+                    self.frame = arr
+        return Gst.FlowReturn.OK
+
+    def _on_error(self, bus, msg):
+        err, dbg = msg.parse_error()
+        print(f"[GST ERROR] {err}: {dbg}")
+
+    def get_frame(self):
+        with self.lock:
+            return self.frame.copy() if self.frame is not None else None
+
+    def start_recording(self, path, fmt):
+        if self.rec:
+            return
+
+        if "MP4" in fmt:
+            enc_mux = ("mpph264enc header-mode=1 bps=20000000 ! "
+                       "h264parse config-interval=-1 ! mp4mux fragment-duration=1000")
+        else:
+            enc_mux = ("mpph264enc header-mode=1 bps=20000000 ! "
+                       "h264parse config-interval=-1 ! matroskamux")
+
+        label, w, h, fps = RESOLUTIONS[self.res_i]
+
+        bin_str = (
+            f"videoconvert ! "
+            f"video/x-raw,format=NV12,width={w},height={h} ! "
+            f"{enc_mux} ! "
+            f"filesink location={path}"
+        )
+
+        try:
+            rec_bin = Gst.parse_bin_from_description(bin_str, True)
+            self.pipeline.add(rec_bin)
+            tee_src = self.tee.get_request_pad("src_%u")
+            rec_sink_pad = rec_bin.get_static_pad("sink")
+            tee_src.link(rec_sink_pad)
+            rec_bin.sync_state_with_parent()
+            self.rec_bin  = rec_bin
+            self.tee_pad  = tee_src
+            self.rec      = True
+            print(f"[CAM] Recording started: {path}")
+        except Exception as e:
+            print(f"[CAM] Record start error: {e}")
+
+    def stop_recording(self):
+        if not self.rec or not self.rec_bin:
+            return
+        try:
+            self.tee_pad.send_event(Gst.Event.new_eos())
+            time.sleep(0.5)
+            self.tee.release_request_pad(self.tee_pad)
+            self.rec_bin.set_state(Gst.State.NULL)
+            self.pipeline.remove(self.rec_bin)
+        except Exception as e:
+            print(f"[CAM] Record stop error: {e}")
+        finally:
+            self.rec_bin = None
+            self.tee_pad = None
+            self.rec     = False
+            print("[CAM] Recording stopped")
+
+    def restart(self, res_i):
+        self.pipeline.set_state(Gst.State.NULL)
+        self.pipeline = None
+        self.res_i    = res_i
+        self._build()
+
+    def stop(self):
+        if self.rec:
+            self.stop_recording()
+        if self.pipeline:
+            self.pipeline.set_state(Gst.State.NULL)
+
+# ── App ────────────────────────────────────────────────────────────────────────
+
+class App:
+    def __init__(self):
+        os.makedirs(SAVE_DIR, exist_ok=True)
+
+        self.res_i   = 1
+        self.pfmt_i  = 0
+        self.vfmt_i  = 0
+        self.flash   = 0
+        self.status  = "Ready"
+        self.status_t= 0
+        self.settings= False
+        self.prev_btn= False
+        self.rec_t   = 0
+
+        self.cam = Camera(DEVICE, self.res_i)
+
+        cv2.namedWindow("Camera", cv2.WINDOW_NORMAL)
+        cv2.resizeWindow("Camera", 1280, 760)
+
+    def msg(self, text, secs=3):
+        self.status   = text
+        self.status_t = time.time() + secs
+        print("[APP]", text)
+
+    def ts(self):
+        return datetime.now().strftime("%Y%m%d_%H%M%S")
+
+    def snap(self):
+        frame = self.cam.get_frame()
+        if frame is None:
+            self.msg("No frame!")
+            return
+        fmt  = PHOTO_FMTS[self.pfmt_i]
+        exts = {"JPEG": ".jpg", "PNG": ".png", "TIFF": ".tiff"}
+        path = os.path.join(SAVE_DIR, f"photo_{self.ts()}{exts[fmt]}")
+        params = []
+        if fmt == "JPEG":
+            params = [cv2.IMWRITE_JPEG_QUALITY, 95]
+        elif fmt == "PNG":
+            params = [cv2.IMWRITE_PNG_COMPRESSION, 1]
+        cv2.imwrite(path, frame, params)
+        self.msg(f"Photo: {os.path.basename(path)}")
+        self.flash = time.time() + 0.2
+
+    def toggle_rec(self):
+        if self.cam.rec:
+            self.cam.stop_recording()
+            secs = int(time.time() - self.rec_t)
+            self.msg(f"Video saved ({secs}s)")
+        else:
+            fmt  = VIDEO_FMTS[self.vfmt_i]
+            ext  = ".mp4" if "MP4" in fmt else ".mkv"
+            path = os.path.join(SAVE_DIR, f"video_{self.ts()}{ext}")
+            self.cam.start_recording(path, fmt)
+            self.rec_t = time.time()
+            self.msg(f"Recording {fmt}...", 99999)
+
+    def set_res(self, i):
+        if self.cam.rec:
+            self.msg("Stop recording first!")
+            return
+        self.res_i = i
+        self.cam.restart(i)
+        self.msg(f"Resolution: {RESOLUTIONS[i][0]}")
+
+    def draw(self, frame):
+        fh, fw = frame.shape[:2]
+        pw     = 270
+        canvas = np.full((fh, fw + pw, 3), DARK, dtype=np.uint8)
+        canvas[:, :fw] = frame
+
+        if time.time() < self.flash:
+            alpha = (self.flash - time.time()) / 0.2
+            white = canvas.copy()
+            white[:, :fw] = 255
+            cv2.addWeighted(white, alpha * 0.8, canvas, 1 - alpha * 0.8, 0, canvas)
+
+        if self.cam.rec:
+            secs = int(time.time() - self.rec_t)
+            m, s = divmod(secs, 60)
+            if int(time.time() * 2) % 2 == 0:
+                cv2.circle(canvas, (18, 18), 8, RED, -1)
+            cv2.putText(canvas, f"REC {m:02d}:{s:02d}", (32, 24),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.65, RED, 2)
+
+        cv2.rectangle(canvas, (fw, 0), (fw + pw, fh), PANEL, -1)
+        cv2.line(canvas, (fw, 0), (fw, fh), GREEN, 2)
+
+        x, y = fw + 12, 30
+
+        def t(text, col=WHITE, sc=0.52, bold=False):
+            nonlocal y
+            cv2.putText(canvas, text, (x, y), cv2.FONT_HERSHEY_SIMPLEX,
+                        sc, col, 2 if bold else 1)
+            y += int(sc * 44 + 4)
+
+        def hr():
+            nonlocal y
+            cv2.line(canvas, (x, y), (x + pw - 18, y), GRAY, 1)
+            y += 8
+
+        t("OPI5  CAMERA", GREEN, 0.62, bold=True)
+        hr()
+        t("RESOLUTION", GRAY, 0.42)
+        t(RESOLUTIONS[self.res_i][0], WHITE, 0.52)
+        t("PHOTO FORMAT", GRAY, 0.42)
+        t(PHOTO_FMTS[self.pfmt_i], WHITE, 0.52)
+        t("VIDEO FORMAT", GRAY, 0.42)
+        t(VIDEO_FMTS[self.vfmt_i], WHITE, 0.52)
+        hr()
+        t("KEYS", GRAY, 0.42)
+        t("[P]  Photo", WHITE, 0.47)
+        t("[V]  Rec / Stop", RED if self.cam.rec else WHITE, 0.47)
+        t("[S]  Settings", WHITE, 0.47)
+        t("[Q]  Quit", WHITE, 0.47)
+        if gpio_ok:
+            t("[BTN] Shutter", YELLOW, 0.47)
+        hr()
+        t("~/Pictures/camera", GRAY, 0.40)
+
+        if time.time() < self.status_t:
+            hr()
+            msg = self.status
+            while msg:
+                t(msg[:26], YELLOW, 0.44)
+                msg = msg[26:]
+
+        if self.settings:
+            canvas = self.draw_settings(canvas, fw, fh)
+
+        return canvas
+
+    def draw_settings(self, canvas, fw, fh):
+        ow = int(fw * 0.55)
+        oh = int(fh * 0.78)
+        ox = (fw - ow) // 2
+        oy = (fh - oh) // 2
+        overlay = canvas.copy()
+        cv2.rectangle(overlay, (ox, oy), (ox + ow, oy + oh), (15, 15, 15), -1)
+        cv2.addWeighted(overlay, 0.93, canvas, 0.07, 0, canvas)
+        cv2.rectangle(canvas, (ox, oy), (ox + ow, oy + oh), GREEN, 2)
+
+        x, y = ox + 16, oy + 30
+
+        def s(text, col=WHITE, sc=0.50, bold=False):
+            nonlocal y
+            cv2.putText(canvas, text, (x, y), cv2.FONT_HERSHEY_SIMPLEX,
+                        sc, col, 2 if bold else 1)
+            y += 26
+
+        s("SETTINGS", GREEN, 0.60, bold=True)
+        y += 6
+        s("Resolution  [1-4]", GRAY, 0.43)
+        for i, (label, w, h, fps) in enumerate(RESOLUTIONS):
+            s(f"  [{i+1}] {label}  @{fps}fps", GREEN if i == self.res_i else WHITE, 0.43)
+        y += 4
+        s("Photo Format  [6-8]", GRAY, 0.43)
+        for i, f in enumerate(PHOTO_FMTS):
+            s(f"  [{i+6}] {f}", GREEN if i == self.pfmt_i else WHITE, 0.43)
+        y += 4
+        s("Video Format  [A-B]", GRAY, 0.43)
+        for i, f in enumerate(VIDEO_FMTS):
+            s(f"  [{chr(65+i)}] {f}", GREEN if i == self.vfmt_i else WHITE, 0.43)
+        y += 8
+        s("[S]  Close", YELLOW, 0.48)
+        return canvas
+
+    def key(self, k):
+        if k == -1:
+            return True
+        if self.settings:
+            if ord('1') <= k <= ord('4'):
+                self.set_res(k - ord('1'))
+            elif ord('6') <= k <= ord('8'):
+                self.pfmt_i = k - ord('6')
+            elif k in (ord('a'), ord('A')):
+                self.vfmt_i = 0
+            elif k in (ord('b'), ord('B')):
+                self.vfmt_i = 1
+            if k == ord('s'):
+                self.settings = False
+            return True
+        if k == ord('q'):
+            return False
+        elif k == ord('p') and not self.cam.rec:
+            self.snap()
+        elif k == ord('v'):
+            self.toggle_rec()
+        elif k == ord('s'):
+            self.settings = True
+        return True
+
+    def check_gpio(self):
+        if not gpio_ok:
+            return
+        pressed = GPIO.input(GPIO_PIN) == GPIO.LOW
+        if pressed and not self.prev_btn:
+            if self.cam.rec:
+                self.toggle_rec()
+            else:
+                self.snap()
+        self.prev_btn = pressed
+
+    def run(self):
+        print(f"OPI5 Camera | {SAVE_DIR}")
+        print("P=photo  V=video  S=settings  Q=quit")
+        last_frame = None
+        while True:
+            frame = self.cam.get_frame()
+            if frame is not None:
+                last_frame = frame
+            if last_frame is None:
+                time.sleep(0.03)
+                continue
+            self.check_gpio()
+            cv2.imshow("Camera", self.draw(last_frame))
+            if not self.key(cv2.waitKey(1) & 0xFF):
+                break
+        self.cam.stop()
+        cv2.destroyAllWindows()
+        if gpio_ok:
+            GPIO.cleanup()
+        print("Done.")
+
+# ── Entry ──────────────────────────────────────────────────────────────────────
+
+if __name__ == "__main__":
+    import sys
+    if len(sys.argv) > 1:
+        DEVICE = sys.argv[1]
+    if not os.path.exists(DEVICE):
+        print(f"Device not found: {DEVICE}")
+        os.system("v4l2-ctl --list-devices 2>/dev/null")
+        sys.exit(1)
+    try:
+        App().run()
+    except KeyboardInterrupt:
+        print("Interrupted.")
+```
+
+---
+
+## 16. Changelog
+
+| Version | Date | Notes |
+|---|---|---|
+| 1.0 | 2026-02-27 | Initial release |
+
+---
+
+## License
+
+This guide and the camera application code are released under the MIT License.
+
+The ADS7846-X11-daemon is by Tomasz Mankowski — see [original repository](https://github.com/Tomasz-Mankowski/ADS7846-X11-daemon) for its license.
+
+---
+
+*Guide maintained by the project author. Contributions and corrections welcome via GitHub Issues.*
