@@ -1,0 +1,27 @@
+title: DIY Camera Build Guide
+description: Two approaches to building a modular DIY camera from a single-board computer
+theme: just-the-docs
+
+# Optional but recommended
+url: "https://yourusername.github.io"
+baseurl: "/your-repo-name"
+
+# Enables search
+search_enabled: true
+```
+
+Commit it. GitHub will automatically build and deploy the site — usually takes 1–2 minutes.
+
+Your site will then be live at `https://yourusername.github.io/your-repo-name`
+
+---
+
+**One thing to be aware of:** `just-the-docs` works best when the documentation is split into **multiple `.md` files** rather than one giant `README.md` — each file becomes a page in the sidebar. Right now everything is in one file, which will still work but you won't get the full sidebar navigation benefit.
+
+Want me to split the `README.md` into separate files like this?
+```
+_docs/
+├── index.md           ← intro + comparison
+├── sweet-potato.md    ← full Sweet Potato guide  
+├── orangepi5.md       ← full Orange Pi 5 guide
+└── camera-app.md      ← just the Python source code
