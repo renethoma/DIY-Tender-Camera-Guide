@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sweet Potato — DIY Camera Guide</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Fraunces:ital,wght@0,300;0,600;0,900;1,300&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0e0f11;
+      --surface:   #16181c;
+      --border:    #252830;
+      --accent:    #4ade80;
+      --accent-dim:#166534;
+      --white:     #f1f5f9;
+      --muted:     #64748b;
+      --mono:      'JetBrains Mono', monospace;
+      --serif:     'Fraunces', Georgia, serif;
+      --sidebar:   260px;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--white);
+      font-family: var(--mono);
+      display: flex;
+      min-height: 100vh;
+    }
+
+    /* ── SIDEBAR ───────────────────────────────── */
+    .sidebar {
+      width: var(--sidebar);
+      flex-shrink: 0;
+      position: fixed;
+      top: 0; left: 0; bottom: 0;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      overflow-y: auto;
+      padding: 32px 0;
+      z-index: 100;
+    }
+
+    .sidebar-logo {
+      padding: 0 24px 24px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 20px;
+    }
+
+    .sidebar-back {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+      color: var(--muted);
+      text-decoration: none;
+      margin-bottom: 14px;
+      transition: color 0.15s;
+    }
+    .sidebar-back:hover { color: var(--white); }
+
+    .sidebar-title {
+      font-family: var(--serif);
+      font-size: 16px;
+      font-weight: 900;
+      color: var(--accent);
+      line-height: 1.2;
+    }
+
+    .sidebar-meta {
+      font-size: 10px;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    .sidebar-badge {
+      display: inline-block;
+      margin-top: 8px;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 3px 8px;
+      border-radius: 3px;
+      background: #0d1f12;
+      color: var(--accent);
+      border: 1px solid var(--accent-dim);
+    }
+
+    .nav-section {
+      padding: 0 16px;
+      margin-bottom: 4px;
+    }
+
+    .nav-label {
+      font-size: 9px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--muted);
+      padding: 12px 8px 6px;
+    }
+
+    .nav-link {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 8px;
+      font-size: 12px;
+      color: #94a3b8;
+      text-decoration: none;
+      border-radius: 4px;
+      transition: background 0.12s, color 0.12s;
+      line-height: 1.3;
+    }
+
+    .nav-link:hover { background: #1e2129; color: var(--white); }
+    .nav-link.active { background: #0d1f12; color: var(--accent); }
+
+    .nav-num {
+      font-size: 10px;
+      color: var(--accent-dim);
+      width: 16px;
+      flex-shrink: 0;
+    }
+
+    /* ── MAIN CONTENT ──────────────────────────── */
+    .main {
+      margin-left: var(--sidebar);
+      flex: 1;
+      max-width: 860px;
+      padding: 60px 56px 80px;
+    }
+
+    /* ── HERO ──────────────────────────────────── */
+    .hero {
+      margin-bottom: 52px;
+      padding-bottom: 40px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .hero-eyebrow {
+      font-size: 11px;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 14px;
+    }
+
+    .hero-eyebrow span { color: var(--accent); }
+
+    .hero h1 {
+      font-family: var(--serif);
+      font-weight: 900;
+      font-size: clamp(36px, 5vw, 56px);
+      line-height: 1.05;
+      letter-spacing: -0.02em;
+      margin-bottom: 20px;
+    }
+
+    .hero-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      margin-top: 16px;
+    }
+
+    .meta-item {
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .meta-item strong { color: var(--white); }
+
+    .phase-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      padding: 5px 12px;
+      border-radius: 20px;
+      background: #0d1f12;
+      color: var(--accent);
+      border: 1px solid var(--accent-dim);
+      margin-top: 10px;
+    }
+
+    .phase-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    /* ── TYPOGRAPHY ────────────────────────────── */
+    .content-section {
+      margin-bottom: 52px;
+      scroll-margin-top: 24px;
+    }
+
+    h2 {
+      font-family: var(--serif);
+      font-size: 26px;
+      font-weight: 600;
+      color: var(--white);
+      margin-bottom: 20px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+      scroll-margin-top: 24px;
+    }
+
+    h3 {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--accent);
+      margin: 28px 0 12px;
+      letter-spacing: 0.03em;
+    }
+
+    p {
+      font-size: 13px;
+      line-height: 1.85;
+      color: #94a3b8;
+      margin-bottom: 14px;
+    }
+
+    p strong { color: var(--white); }
+
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    ul, ol {
+      padding-left: 20px;
+      margin-bottom: 14px;
+    }
+
+    li {
+      font-size: 13px;
+      line-height: 1.8;
+      color: #94a3b8;
+      margin-bottom: 4px;
+    }
+
+    li strong { color: var(--white); }
+
+    /* ── CODE ──────────────────────────────────── */
+    code {
+      font-family: var(--mono);
+      font-size: 12px;
+      background: #0a0b0d;
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      padding: 2px 6px;
+      color: var(--accent);
+    }
+
+    pre {
+      background: #0a0b0d;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 20px 22px;
+      overflow-x: auto;
+      margin: 14px 0 20px;
+    }
+
+    pre code {
+      background: none;
+      border: none;
+      padding: 0;
+      font-size: 12.5px;
+      color: #a3e4b0;
+      line-height: 1.7;
+    }
+
+    /* ── TABLES ────────────────────────────────── */
+    .table-wrap { overflow-x: auto; margin: 14px 0 20px; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+
+    th {
+      background: #1a1d23;
+      color: var(--muted);
+      font-size: 10px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 10px 14px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+
+    td {
+      padding: 9px 14px;
+      border-bottom: 1px solid #1a1d20;
+      color: #94a3b8;
+      vertical-align: top;
+      line-height: 1.5;
+    }
+
+    td strong { color: var(--white); }
+    td code { font-size: 11px; }
+
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #12141a; }
+
+    /* ── CALLOUTS ──────────────────────────────── */
+    .callout {
+      border-radius: 6px;
+      padding: 14px 18px;
+      margin: 14px 0;
+      font-size: 12.5px;
+      line-height: 1.65;
+    }
+
+    .callout-warn {
+      background: #1a0f05;
+      border-left: 3px solid #f59e0b;
+      color: #fcd34d;
+    }
+
+    .callout-info {
+      background: #0a1a0e;
+      border-left: 3px solid var(--accent-dim);
+      color: #86efac;
+    }
+
+    .callout strong { color: inherit; }
+
+    /* ── MILESTONE ─────────────────────────────── */
+    .milestone {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: #0d1f12;
+      border: 1px solid var(--accent-dim);
+      border-radius: 6px;
+      padding: 10px 16px;
+      font-size: 12px;
+      color: var(--accent);
+      margin: 10px 0;
+    }
+
+    /* ── LINKS ROW ─────────────────────────────── */
+    .link-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 16px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 9px 18px;
+      border-radius: 5px;
+      font-family: var(--mono);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      text-decoration: none;
+      transition: opacity 0.15s, transform 0.15s;
+    }
+
+    .btn:hover { opacity: 0.85; transform: translateY(-1px); text-decoration: none; }
+    .btn-green { background: var(--accent); color: #052e16; }
+    .btn-ghost { background: transparent; color: var(--accent); border: 1px solid var(--accent-dim); }
+
+    /* ── PHASE TABLE ───────────────────────────── */
+    .phase-row td:first-child { color: var(--white); font-weight: 700; }
+
+    /* ── RESPONSIVE ────────────────────────────── */
+    @media (max-width: 800px) {
+      .sidebar { transform: translateX(-100%); }
+      .main { margin-left: 0; padding: 32px 20px 60px; }
+    }
+
+    /* ── FADE IN ───────────────────────────────── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .main { animation: fadeUp 0.4s ease both; }
+  </style>
+</head>
+<body>
+
+<!-- ── SIDEBAR ──────────────────────────────────────── -->
+<nav class="sidebar">
+  <div class="sidebar-logo">
+    <a href="index.html" class="sidebar-back">← Back to overview</a>
+    <div class="sidebar-title">Sweet Potato</div>
+    <div class="sidebar-meta">Libre Computer AML-S905X-CC-V2</div>
+    <div class="sidebar-meta" style="margin-top:4px">by Luca · October 2025</div>
+    <span class="sidebar-badge">Approach A</span>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-label">Contents</div>
+    <a href="#overview" class="nav-link"><span class="nav-num">1</span>Project Overview</a>
+    <a href="#hardware" class="nav-link"><span class="nav-num">2</span>Hardware</a>
+    <a href="#software" class="nav-link"><span class="nav-num">3</span>Software Stack</a>
+    <a href="#camera" class="nav-link"><span class="nav-num">4</span>Camera Setup</a>
+    <a href="#touch" class="nav-link"><span class="nav-num">5</span>Touchscreen Setup</a>
+    <a href="#network" class="nav-link"><span class="nav-num">6</span>Network Notes</a>
+    <a href="#ui" class="nav-link"><span class="nav-num">7</span>UI/UX Plan</a>
+    <a href="#decisions" class="nav-link"><span class="nav-num">8</span>Design Decisions</a>
+    <a href="#issues" class="nav-link"><span class="nav-num">9</span>Known Issues</a>
+  </div>
+
+  <div class="nav-section" style="margin-top:16px">
+    <div class="nav-label">Other Build</div>
+    <a href="orange-pi5.html" class="nav-link" style="color:#60a5fa">
+      <span class="nav-num" style="color:#1e3a5f">B</span>Orange Pi 5 →
+    </a>
+  </div>
+</nav>
+
+<!-- ── MAIN ─────────────────────────────────────────── -->
+<main class="main">
+
+  <!-- HERO -->
+  <div class="hero">
+    <p class="hero-eyebrow">Approach A · <span>DIY Camera Build</span></p>
+    <h1>Sweet Potato<br>Build Guide</h1>
+    <div class="hero-meta">
+      <span class="meta-item"><strong>Author:</strong> Luca</span>
+      <span class="meta-item"><strong>SBC:</strong> Libre Computer AML-S905X-CC-V2</span>
+      <span class="meta-item"><strong>Started:</strong> October 2025</span>
+      <span class="meta-item"><strong>Updated:</strong> January 31, 2026</span>
+    </div>
+    <div><span class="phase-badge"><span class="phase-dot"></span>Phase 4 — System Integration & UI Planning</span></div>
+    <div class="link-row" style="margin-top:20px">
+      <a class="btn btn-green" href="https://github.com/LucaLonga/Tender-Camera" target="_blank">GitHub →</a>
+      <a class="btn btn-ghost" href="https://LucaLonga.github.io/Tender-Camera/" target="_blank">Docs Site →</a>
+    </div>
+  </div>
+
+  <!-- 1. PROJECT OVERVIEW -->
+  <section class="content-section" id="overview">
+    <h2>1. Project Overview</h2>
+    <p>The <strong>Tender Camera</strong> is a sustainable, modular digital camera built from a single-board computer and open-source software. The name "Sweet Potato" refers to the SBC used: the Libre Computer AML-S905X-CC-V2, whose community nickname is "Sweet Potato."</p>
+    <h3>Goals</h3>
+    <ul>
+      <li>Build a fully functional digital camera from modular, off-the-shelf components</li>
+      <li>Design a touch-based UI that embodies permacomputing aesthetics</li>
+      <li>Implement advanced features (face detection, metadata control, custom capture modes)</li>
+      <li>Document the entire process as a replicable, educational resource</li>
+    </ul>
+  </section>
+
+  <!-- 2. HARDWARE -->
+  <section class="content-section" id="hardware">
+    <h2>2. Hardware</h2>
+
+    <h3>SBC — Libre Computer Sweet Potato (AML-S905X-CC-V2)</h3>
+    <div class="table-wrap"><table>
+      <tr><th>Specification</th><th>Value</th></tr>
+      <tr><td>SoC</td><td>Amlogic S905X</td></tr>
+      <tr><td>CPU</td><td>Quad-Core ARM Cortex-A53 @ 1.5GHz</td></tr>
+      <tr><td>RAM</td><td>2GB DDR3</td></tr>
+      <tr><td>GPU</td><td>Mali-450 MP5</td></tr>
+      <tr><td>USB Ports</td><td>4× USB 2.0 (Type A)</td></tr>
+      <tr><td>Video Output</td><td>1× HDMI 2.0</td></tr>
+      <tr><td>Storage</td><td>MicroSD slot</td></tr>
+      <tr><td>Network</td><td>1× 100Mbps Ethernet (RJ45)</td></tr>
+      <tr><td>Power</td><td>5V/2A via USB-C</td></tr>
+      <tr><td>GPIO</td><td>40-pin header (Raspberry Pi compatible layout)</td></tr>
+      <tr><td>Dimensions</td><td>85mm × 56mm</td></tr>
+    </table></div>
+    <div class="callout callout-warn">⚠️ The Sweet Potato has <strong>no built-in WiFi or Bluetooth</strong> — all wireless connectivity requires external USB adapters.</div>
+
+    <h3>USB Port Allocation (as of 2026-01-31)</h3>
+    <div class="table-wrap"><table>
+      <tr><th>Port</th><th>Device</th><th>USB ID</th></tr>
+      <tr><td>USB 1</td><td>Genesys Logic Hub (internal)</td><td><code>05e3:0610</code></td></tr>
+      <tr><td>USB 2</td><td>Sony IMX179 Camera</td><td><code>0bda:5805</code></td></tr>
+      <tr><td>USB 3</td><td>Waveshare Touch Controller</td><td><code>0eef:0005</code></td></tr>
+      <tr><td>USB 4</td><td>Trust Keyboard (dev only)</td><td><code>145f:02c9</code></td></tr>
+    </table></div>
+
+    <h3>Display — Waveshare 4.3inch HDMI LCD (B)</h3>
+    <div class="table-wrap"><table>
+      <tr><th>Specification</th><th>Value</th></tr>
+      <tr><td>Size</td><td>4.3 inches</td></tr>
+      <tr><td>Resolution</td><td>800×480 (landscape native)</td></tr>
+      <tr><td>Planned orientation</td><td>Portrait (480×800 after rotation)</td></tr>
+      <tr><td>Panel</td><td>IPS, 160° viewing angle</td></tr>
+      <tr><td>Touch type</td><td>Capacitive, 5-point multitouch</td></tr>
+      <tr><td>Touch interface</td><td>USB — appears as <code>/dev/input/event0</code></td></tr>
+      <tr><td>Display interface</td><td>HDMI</td></tr>
+    </table></div>
+    <div class="callout callout-info">The physical buttons on the display (Menu, OK, Direction, Return, Power) are controlled by the RTD2660H display controller — they are <strong>not accessible to the OS</strong>. For a shutter button, wire a tactile switch to the GPIO header and read it via <code>libgpiod</code>.</div>
+
+    <h3>Camera — Sony IMX179 USB Module</h3>
+    <div class="table-wrap"><table>
+      <tr><th>Specification</th><th>Value</th></tr>
+      <tr><td>Model</td><td>DSJ-3879-HE</td></tr>
+      <tr><td>Sensor</td><td>Sony IMX179</td></tr>
+      <tr><td>Sensor size</td><td>1/3.2"</td></tr>
+      <tr><td>Resolution</td><td>8 Megapixels (3264×2448)</td></tr>
+      <tr><td>Interface</td><td>USB 2.0</td></tr>
+      <tr><td>Protocol</td><td>UVC — driver-free on Linux</td></tr>
+      <tr><td>Lens mount</td><td>M12 (interchangeable)</td></tr>
+      <tr><td>USB ID</td><td><code>0bda:5805</code></td></tr>
+    </table></div>
+
+    <h3>Supported Resolutions (MJPG — recommended)</h3>
+    <div class="table-wrap"><table>
+      <tr><th>Resolution</th><th>FPS</th><th>Megapixels</th><th>Use case</th></tr>
+      <tr><td>3264×2448</td><td>15</td><td>8.0 MP</td><td>Maximum quality stills</td></tr>
+      <tr><td>1920×1080</td><td>30</td><td>2.1 MP</td><td>Full HD video / viewfinder</td></tr>
+      <tr><td>1280×720</td><td>30</td><td>0.9 MP</td><td>HD video</td></tr>
+      <tr><td>640×480</td><td>30</td><td>0.3 MP</td><td>Fast preview</td></tr>
+    </table></div>
+    <div class="callout callout-info">MJPG compresses on the camera module itself — this is why high resolutions are possible over USB 2.0. Raw YUYV is limited to 640×480 at 30fps by USB bandwidth.</div>
+
+    <h3>Connection Diagram</h3>
+    <pre><code>                ┌──────────────────────┐
+                │   Sweet Potato SBC   │
+                │  (AML-S905X-CC-V2)   │
+                │                      │
+Ethernet ───────┤ RJ45                 │
+                │ HDMI ────────────────┼──── Waveshare Display
+                │ USB1 ────────────────┼──── IMX179 Camera
+                │ USB2 ────────────────┼──── Waveshare Touch (USB)
+                │ USB3 ────────────────┼──── Trust Keyboard (dev only)
+                │ USB4 ────────────────┼──── [Future: WiFi Adapter]
+                │ USB-C (power) ───────┼──── 5V/3A PSU
+                │ MicroSD: 128GB       │
+                └──────────────────────┘</code></pre>
+  </section>
+
+  <!-- 3. SOFTWARE -->
+  <section class="content-section" id="software">
+    <h2>3. Software Stack</h2>
+
+    <h3>Operating System</h3>
+    <div class="table-wrap"><table>
+      <tr><th>Property</th><th>Value</th></tr>
+      <tr><td>Distribution</td><td>Armbian 25.11.2 noble</td></tr>
+      <tr><td>Base</td><td>Ubuntu 24.04 LTS</td></tr>
+      <tr><td>Kernel</td><td>6.12.58-current-meson64</td></tr>
+      <tr><td>Architecture</td><td>aarch64</td></tr>
+      <tr><td>Package manager</td><td>apt</td></tr>
+      <tr><td>Hostname</td><td>sweet-potato</td></tr>
+      <tr><td>User</td><td>mycamera</td></tr>
+    </table></div>
+    <div class="callout callout-info">Earlier documentation described this system as running Arch Linux ARM with <code>pacman</code>. The system now runs Armbian (Ubuntu-based). All <code>pacman</code> commands in older notes should be replaced with <code>apt</code> equivalents.</div>
+
+    <h3>Packages to Install</h3>
+    <pre><code>sudo apt update
+
+# Camera capture
+sudo apt install fswebcam
+
+# Input device debugging
+sudo apt install evtest
+
+# Framebuffer image viewer
+sudo apt install fbi
+
+# UI framework (Phase 2)
+sudo apt install python3-kivy
+
+# Computer vision (Phase 4)
+sudo apt install python3-opencv
+
+# WiFi driver compilation (when needed)
+sudo apt install linux-headers-$(uname -r)</code></pre>
+
+    <p><strong>Already present in Armbian (no install needed):</strong></p>
+    <ul>
+      <li><code>v4l-utils</code> — camera querying tools (<code>v4l2-ctl</code>)</li>
+      <li><code>uvcvideo</code> — kernel driver for USB cameras</li>
+      <li><code>gcc</code>, <code>make</code>, <code>git</code> — build tools</li>
+      <li><code>evtest</code> — input device testing</li>
+    </ul>
+
+    <h3>Key Package Explanations</h3>
+    <p><strong>uvcvideo (kernel built-in)</strong><br>The USB Video Class driver. Any UVC-compliant camera is supported automatically. The Sony IMX179 appeared as <code>/dev/video1</code> immediately on boot with no configuration.</p>
+    <p><strong>v4l-utils</strong><br>Video4Linux utilities. <code>v4l2-ctl</code> lists detected cameras, queries supported resolutions and formats, and sets camera parameters from the terminal.</p>
+    <p><strong>fswebcam</strong><br>Minimal command-line tool for capturing stills from a V4L2 camera. Handles format negotiation and JPEG saving in one command — ideal for the MVP phase.</p>
+    <p><strong>evtest</strong><br>Reads raw Linux input events from <code>/dev/input/event*</code>. Used to verify the touchscreen is sending correct coordinates (<code>ABS_X</code>, <code>ABS_Y</code>) and touch events (<code>BTN_TOUCH</code>).</p>
+    <p><strong>fbi</strong><br>Framebuffer image viewer. Displays images directly on screen without a desktop environment — essential for a headless kiosk device.</p>
+    <p><strong>python3-kivy</strong><br>Touch-native Python UI framework. Renders directly to the framebuffer without X11. Layouts are written in declarative <code>.kv</code> files, separating design from logic.</p>
+  </section>
+
+  <!-- 4. CAMERA -->
+  <section class="content-section" id="camera">
+    <h2>4. Camera Setup</h2>
+
+    <h3>Device Mapping</h3>
+    <div class="table-wrap"><table>
+      <tr><th>Device</th><th>Description</th><th>Use?</th></tr>
+      <tr><td><code>/dev/video0</code></td><td>Amlogic hardware video decoder (SoC built-in)</td><td>❌ NOT the camera</td></tr>
+      <tr><td><code>/dev/video1</code></td><td>Sony IMX179 camera (uvcvideo)</td><td>✅ USE THIS</td></tr>
+      <tr><td><code>/dev/video2</code></td><td>Camera metadata stream</td><td>Rarely needed</td></tr>
+    </table></div>
+    <div class="callout callout-warn">⚠️ Always use <code>/dev/video1</code>. The SoC's hardware video decoder creates a <code>/dev/video0</code> device — it is not the camera.</div>
+
+    <h3>Verified Working Commands</h3>
+    <pre><code># List all video devices
+v4l2-ctl --list-devices
+
+# Check supported formats and resolutions
+v4l2-ctl -d /dev/video1 --list-formats-ext
+
+# Capture a full 8MP still
+fswebcam -d /dev/video1 -r 3264x2448 --no-banner photo.jpg
+
+# Capture with timestamp filename
+fswebcam -d /dev/video1 -r 1920x1080 --no-banner "photo_$(date +%Y-%m-%d_%H-%M-%S).jpg"
+
+# View image on the display
+sudo fbi -T 1 -a photo.jpg   # press q to quit</code></pre>
+
+    <div class="milestone">🎉 First capture milestone: January 31, 2026, 17:58 — test_8mp.jpg — 2.8MB — 3264×2448</div>
+  </section>
+
+  <!-- 5. TOUCHSCREEN -->
+  <section class="content-section" id="touch">
+    <h2>5. Touchscreen Setup</h2>
+
+    <h3>Device Mapping</h3>
+    <div class="table-wrap"><table>
+      <tr><th>Device</th><th>Name</th><th>Use?</th></tr>
+      <tr><td><code>/dev/input/event0</code></td><td>WaveShare WS170120</td><td>✅ Touchscreen</td></tr>
+      <tr><td><code>/dev/input/event1–3</code></td><td>SIGMACHIP Trust Keyboard</td><td>Development only</td></tr>
+      <tr><td><code>/dev/input/event4</code></td><td>meson-ir (IR receiver)</td><td>Not used</td></tr>
+    </table></div>
+
+    <h3>Testing Touch Input</h3>
+    <pre><code># List input devices
+sudo evtest
+
+# Select device 0 (WaveShare WS170120)
+# Touch the screen — you should see ABS_X, ABS_Y, and BTN_TOUCH events
+# Press Ctrl+C to stop</code></pre>
+    <div class="callout callout-info">Touchscreen confirmed fully working on 2026-01-31.</div>
+  </section>
+
+  <!-- 6. NETWORK -->
+  <section class="content-section" id="network">
+    <h2>6. Network Notes (FHNW University Network)</h2>
+    <p>ICMP (ping) is blocked by the university firewall. <strong>Do not use <code>ping</code> to test internet connectivity.</strong> Use these instead:</p>
+    <pre><code>sudo apt update              # Confirms DNS + HTTP — best test
+resolvectl query google.com  # Tests DNS only
+curl -I https://google.com   # Tests HTTP only</code></pre>
+  </section>
+
+  <!-- 7. UI/UX -->
+  <section class="content-section" id="ui">
+    <h2>7. UI/UX Plan</h2>
+
+    <h3>Feature Phases</h3>
+    <div class="table-wrap"><table class="phase-row">
+      <tr><th>Phase</th><th>Features</th></tr>
+      <tr><td><strong>Phase 1 — MVP</strong></td><td>Touch capture button, status indicators, kiosk boot, CLI escape hatch</td></tr>
+      <tr><td><strong>Phase 2</strong></td><td>Live viewfinder, photo gallery, delete controls</td></tr>
+      <tr><td><strong>Phase 3</strong></td><td>Video mode, timelapse, settings panel</td></tr>
+      <tr><td><strong>Phase 4</strong></td><td>Face detection, object recognition, custom metadata, filters</td></tr>
+    </table></div>
+
+    <h3>UI Framework Decision</h3>
+    <p>After evaluating PyGame, GTK4, Qt/QML, and a web kiosk approach, <strong>Python + Kivy</strong> was selected:</p>
+    <ul>
+      <li>Native touch support, designed for embedded interfaces</li>
+      <li>Renders directly to framebuffer — no X11 or desktop environment needed</li>
+      <li><code>.kv</code> layout files allow UI design without touching Python code</li>
+      <li>Integrates well with OpenCV for Phase 4 features</li>
+    </ul>
+
+    <h3>Screen Layout (portrait 480×800)</h3>
+    <p>Screens to design: Capture (main), Gallery, Photo View, Settings, Boot/Splash. Touch targets must be at least 44×44px. Aesthetic: permacomputing-inspired — minimal, functional, deliberate.</p>
+  </section>
+
+  <!-- 8. DESIGN DECISIONS -->
+  <section class="content-section" id="decisions">
+    <h2>8. Design Decisions</h2>
+    <div class="table-wrap"><table>
+      <tr><th>Decision</th><th>Choice</th><th>Reasoning</th></tr>
+      <tr><td>Screen orientation</td><td>Portrait (480×800)</td><td>Distinctive camera feel</td></tr>
+      <tr><td>Photo storage</td><td>Internal SD card</td><td>111GB available; USB ports needed for peripherals</td></tr>
+      <tr><td>File naming</td><td>Timestamp (<code>YYYY-MM-DD_HH-MM-SS.jpg</code>)</td><td>Sortable, no conflicts</td></tr>
+      <tr><td>Photo directory</td><td><code>/home/mycamera/photos/</code></td><td>Simple, within user home</td></tr>
+      <tr><td>UI framework</td><td>Python + Kivy</td><td>Touch-native, low resources, framebuffer mode</td></tr>
+      <tr><td>Boot mode</td><td>Kiosk (direct to app)</td><td>Feels like a dedicated camera</td></tr>
+      <tr><td>Debug access</td><td>Keyboard at boot → CLI</td><td>Keeps the device hackable</td></tr>
+    </table></div>
+  </section>
+
+  <!-- 9. KNOWN ISSUES -->
+  <section class="content-section" id="issues">
+    <h2>9. Known Issues</h2>
+    <div class="table-wrap"><table>
+      <tr><th>Issue</th><th>Status</th></tr>
+      <tr><td>WiFi adapter not yet installed</td><td>Pending — needs <code>linux-headers</code> + driver compilation</td></tr>
+      <tr><td>No UI yet</td><td>In planning — framework confirmed, spec written</td></tr>
+      <tr><td><code>ping</code> blocked on FHNW network</td><td>Resolved — use <code>apt update</code> instead</td></tr>
+    </table></div>
+  </section>
+
+</main>
+</body>
+</html>

@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DIY Tender Camera Guide</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Fraunces:ital,wght@0,300;0,600;0,900;1,300&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0e0f11;
+      --surface:   #16181c;
+      --border:    #252830;
+      --green:     #4ade80;
+      --green-dim: #166534;
+      --blue:      #60a5fa;
+      --blue-dim:  #1e3a5f;
+      --white:     #f1f5f9;
+      --muted:     #64748b;
+      --mono:      'JetBrains Mono', monospace;
+      --serif:     'Fraunces', Georgia, serif;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--white);
+      font-family: var(--mono);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── NOISE TEXTURE OVERLAY ─────────────────────── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── HEADER ────────────────────────────────────── */
+    header {
+      position: relative;
+      z-index: 1;
+      padding: 64px 48px 0;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .eyebrow {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 20px;
+    }
+
+    .eyebrow span {
+      color: var(--green);
+    }
+
+    h1 {
+      font-family: var(--serif);
+      font-weight: 900;
+      font-size: clamp(42px, 6vw, 80px);
+      line-height: 1.0;
+      letter-spacing: -0.02em;
+      color: var(--white);
+      margin-bottom: 10px;
+    }
+
+    h1 em {
+      font-style: italic;
+      font-weight: 300;
+      color: var(--muted);
+    }
+
+    .tagline {
+      font-family: var(--mono);
+      font-size: 13px;
+      color: var(--muted);
+      margin-top: 18px;
+      line-height: 1.7;
+      max-width: 560px;
+    }
+
+    .tagline strong { color: var(--white); }
+
+    /* ── INTRO SECTION ─────────────────────────────── */
+    .intro {
+      position: relative;
+      z-index: 1;
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 52px 48px 48px;
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 1px;
+      background: var(--border);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      margin-top: 48px;
+    }
+
+    .intro-block {
+      background: var(--bg);
+      padding: 32px 36px;
+    }
+
+    .intro-block .label {
+      font-size: 10px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+
+    .intro-block p {
+      font-size: 13px;
+      line-height: 1.8;
+      color: #94a3b8;
+    }
+
+    .intro-block p strong { color: var(--white); }
+
+    .intro-block .big {
+      font-family: var(--serif);
+      font-size: 28px;
+      font-weight: 600;
+      color: var(--white);
+      line-height: 1.2;
+      margin-bottom: 10px;
+    }
+
+    /* comparison pill row */
+    .pill-row {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 4px;
+    }
+
+    .pill {
+      display: grid;
+      grid-template-columns: 110px 1fr 1fr;
+      font-size: 11px;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .pill-label {
+      background: #1a1d23;
+      color: var(--muted);
+      padding: 6px 10px;
+      font-size: 10px;
+      letter-spacing: 0.06em;
+      display: flex;
+      align-items: center;
+    }
+
+    .pill-a {
+      padding: 6px 10px;
+      color: var(--green);
+      background: #0d1f12;
+      display: flex;
+      align-items: center;
+    }
+
+    .pill-b {
+      padding: 6px 10px;
+      color: var(--blue);
+      background: #0d1525;
+      display: flex;
+      align-items: center;
+      border-left: 1px solid var(--border);
+    }
+
+    /* ── SPLIT DIVIDER ─────────────────────────────── */
+    .split-header {
+      position: relative;
+      z-index: 1;
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 40px 48px 0;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1px;
+    }
+
+    .split-title {
+      padding: 0 36px 24px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .split-title-a { border-bottom: 2px solid var(--green); }
+    .split-title-b { border-bottom: 2px solid var(--blue); }
+
+    .split-badge {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 4px 10px;
+      border-radius: 3px;
+    }
+
+    .badge-a { background: #0d1f12; color: var(--green); border: 1px solid var(--green-dim); }
+    .badge-b { background: #0d1525; color: var(--blue);  border: 1px solid var(--blue-dim); }
+
+    .split-title h2 {
+      font-family: var(--serif);
+      font-weight: 600;
+      font-size: 22px;
+      color: var(--white);
+    }
+
+    .split-title .author {
+      margin-left: auto;
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    /* ── TWO COLUMN CONTENT ────────────────────────── */
+    .split-body {
+      position: relative;
+      z-index: 1;
+      max-width: 1400px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1px;
+      background: var(--border);
+      min-height: 70vh;
+    }
+
+    .col {
+      background: var(--bg);
+      padding: 36px;
+      overflow: hidden;
+    }
+
+    /* vertical divider line */
+    .split-body::after {
+      content: '';
+      position: absolute;
+      top: 0; bottom: 0;
+      left: 50%;
+      width: 1px;
+      background: var(--border);
+      pointer-events: none;
+    }
+
+    /* ── STEP CARDS ────────────────────────────────── */
+    .step-group {
+      margin-bottom: 32px;
+    }
+
+    .step-group-label {
+      font-size: 10px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .step {
+      display: grid;
+      grid-template-columns: 28px 1fr;
+      gap: 12px;
+      margin-bottom: 12px;
+      align-items: start;
+    }
+
+    .step-num {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 700;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    .num-a { background: #0d1f12; color: var(--green); border: 1px solid var(--green-dim); }
+    .num-b { background: #0d1525; color: var(--blue);  border: 1px solid var(--blue-dim); }
+
+    .step-content h3 {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--white);
+      margin-bottom: 4px;
+    }
+
+    .step-content p {
+      font-size: 11.5px;
+      color: #64748b;
+      line-height: 1.65;
+    }
+
+    .step-content code {
+      display: block;
+      margin-top: 6px;
+      padding: 6px 10px;
+      background: #0a0b0d;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-size: 11px;
+      color: var(--green);
+      white-space: pre;
+    }
+
+    .step-content code.blue { color: var(--blue); }
+
+    /* ── CALLOUT BOXES ─────────────────────────────── */
+    .callout {
+      border-radius: 6px;
+      padding: 14px 16px;
+      margin-bottom: 12px;
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    .callout-green {
+      background: #0a1a0e;
+      border: 1px solid var(--green-dim);
+      color: #86efac;
+    }
+
+    .callout-blue {
+      background: #091526;
+      border: 1px solid var(--blue-dim);
+      color: #93c5fd;
+    }
+
+    .callout-orange {
+      background: #1a0f05;
+      border: 1px solid #92400e;
+      color: #fbbf24;
+    }
+
+    .callout strong { color: inherit; font-weight: 700; }
+
+    /* ── CTA BUTTONS ───────────────────────────────── */
+    .cta-row {
+      display: flex;
+      gap: 10px;
+      margin-top: 28px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 20px;
+      border-radius: 5px;
+      font-family: var(--mono);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-decoration: none;
+      transition: opacity 0.15s, transform 0.15s;
+      cursor: pointer;
+      border: none;
+    }
+
+    .btn:hover { opacity: 0.85; transform: translateY(-1px); }
+
+    .btn-green { background: var(--green); color: #052e16; }
+    .btn-blue  { background: var(--blue);  color: #082f49; }
+    .btn-ghost-green { background: transparent; color: var(--green); border: 1px solid var(--green-dim); }
+    .btn-ghost-blue  { background: transparent; color: var(--blue);  border: 1px solid var(--blue-dim); }
+
+    /* ── FOOTER ────────────────────────────────────── */
+    footer {
+      position: relative;
+      z-index: 1;
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 32px 48px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-top: 1px solid var(--border);
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    footer a { color: var(--muted); text-decoration: none; }
+    footer a:hover { color: var(--white); }
+
+    /* ── FADE IN ANIMATION ─────────────────────────── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    header, .intro, .split-header, .split-body, footer {
+      animation: fadeUp 0.5s ease both;
+    }
+    .intro        { animation-delay: 0.08s; }
+    .split-header { animation-delay: 0.14s; }
+    .split-body   { animation-delay: 0.20s; }
+    footer        { animation-delay: 0.26s; }
+
+    /* ── RESPONSIVE ────────────────────────────────── */
+    @media (max-width: 900px) {
+      header, footer { padding: 40px 24px; }
+      .intro { grid-template-columns: 1fr; padding: 0; }
+      .split-header, .split-body { grid-template-columns: 1fr; }
+      .split-body::after { display: none; }
+      .col { padding: 28px 24px; }
+      .intro-block { padding: 28px 24px; }
+      .split-title-b { border-top: 2px solid var(--blue); }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── HEADER ──────────────────────────────────────────── -->
+<header>
+  <p class="eyebrow">Open Source · <span>Permacomputing</span> · SBC Camera Project</p>
+  <h1>DIY Tender<br><em>Camera Guide</em></h1>
+  <p class="tagline">
+    Two complete approaches to building a <strong>modular digital camera</strong>
+    from a single-board computer, open-source software, and off-the-shelf parts.<br>
+    Built for repairability, transparency, and longevity.
+  </p>
+</header>
+
+<!-- ── INTRO BLOCKS ─────────────────────────────────────── -->
+<section class="intro">
+
+  <div class="intro-block">
+    <p class="label">About this project</p>
+    <div class="big">One goal,<br>two paths.</div>
+    <p>
+      Both builds share the same permacomputing philosophy — every component is
+      <strong>replaceable</strong>, every dependency is <strong>open-source</strong>,
+      and the entire process is <strong>documented</strong> so anyone can replicate it.
+    </p>
+  </div>
+
+  <div class="intro-block">
+    <p class="label">What they share</p>
+    <div class="pill-row">
+      <div class="pill">
+        <span class="pill-label">OS base</span>
+        <span class="pill-a">Ubuntu 24.04</span>
+        <span class="pill-b">Ubuntu 22.04</span>
+      </div>
+      <div class="pill">
+        <span class="pill-label">Camera API</span>
+        <span class="pill-a">V4L2 / UVC</span>
+        <span class="pill-b">V4L2 / MIPI</span>
+      </div>
+      <div class="pill">
+        <span class="pill-label">Display</span>
+        <span class="pill-a">Waveshare 4.3"</span>
+        <span class="pill-b">Waveshare 3.5"</span>
+      </div>
+      <div class="pill">
+        <span class="pill-label">App layer</span>
+        <span class="pill-a">Python + Kivy</span>
+        <span class="pill-b">Python + OpenCV</span>
+      </div>
+      <div class="pill">
+        <span class="pill-label">Driver work</span>
+        <span class="pill-a">Minimal</span>
+        <span class="pill-b">Significant</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="intro-block">
+    <p class="label">Which should you build?</p>
+    <p style="margin-bottom:12px">
+      <strong>Sweet Potato</strong> — if you want the simplest path.
+      USB peripherals mean zero driver configuration. Great for beginners.
+    </p>
+    <p>
+      <strong>Orange Pi 5</strong> — if you want more power and resolution
+      and don't mind device tree overlays and compiling a custom touch driver.
+    </p>
+  </div>
+
+</section>
+
+<!-- ── SPLIT COLUMN HEADERS ──────────────────────────────── -->
+<div class="split-header">
+  <div class="split-title split-title-a">
+    <span class="split-badge badge-a">Approach A</span>
+    <h2>Sweet Potato</h2>
+    <span class="author">by Luca</span>
+  </div>
+  <div class="split-title split-title-b">
+    <span class="split-badge badge-b">Approach B</span>
+    <h2>Orange Pi 5</h2>
+    <span class="author">by René</span>
+  </div>
+</div>
+
+<!-- ── SPLIT BODY ────────────────────────────────────────── -->
+<div class="split-body">
+
+  <!-- LEFT — SWEET POTATO -->
+  <div class="col">
+
+    <div class="step-group">
+      <p class="step-group-label">Hardware</p>
+      <div class="callout callout-green">
+        <strong>Libre Computer AML-S905X-CC-V2</strong><br>
+        Quad-core A53 @ 1.5GHz · 2GB DDR3 · 4× USB 2.0 · 100Mbps Ethernet
+      </div>
+      <div class="callout callout-green">
+        <strong>Sony IMX179 · 8MP USB Camera</strong><br>
+        UVC-compliant — zero driver work. Plug in and it works as /dev/video1.
+      </div>
+      <div class="callout callout-green">
+        <strong>Waveshare 4.3" HDMI LCD</strong><br>
+        Capacitive USB touch — also plug & play. Appears as /dev/input/event0.
+      </div>
+    </div>
+
+    <div class="step-group">
+      <p class="step-group-label">Setup steps</p>
+
+      <div class="step">
+        <div class="step-num num-a">1</div>
+        <div class="step-content">
+          <h3>Flash Armbian 25.11 to MicroSD</h3>
+          <p>Ubuntu 24.04 base. Boot, login as <code style="display:inline;background:none;border:none;padding:0;color:var(--green)">mycamera</code>.</p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num num-a">2</div>
+        <div class="step-content">
+          <h3>Verify camera on /dev/video1</h3>
+          <p>video0 is the SoC decoder — always use video1 for the camera.</p>
+          <code>v4l2-ctl --list-devices</code>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num num-a">3</div>
+        <div class="step-content">
+          <h3>Install packages</h3>
+          <code>sudo apt install fswebcam evtest fbi</code>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num num-a">4</div>
+        <div class="step-content">
+          <h3>Capture your first photo</h3>
+          <code>fswebcam -d /dev/video1 -r 3264x2448 \
+  --no-banner photo.jpg</code>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num num-a">5</div>
+        <div class="step-content">
+          <h3>Verify touch input</h3>
+          <p>Select device 0 — touch the screen to see ABS_X / ABS_Y events.</p>
+          <code>sudo evtest</code>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num num-a">6</div>
+        <div class="step-content">
+          <h3>Install Kivy UI framework</h3>
+          <p>Touch-native Python UI. Renders to framebuffer — no X11 needed.</p>
+          <code>sudo apt install python3-kivy</code>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout callout-green">
+      <strong>⚠ FHNW Network note:</strong> ping is blocked by the university firewall.
+      Use <code style="display:inline;background:none;border:none;padding:0">sudo apt update</code> to test connectivity instead.
+    </div>
+
+    <div class="cta-row">
+      <a class="btn btn-green" href="sweet-potato.html">Full Sweet Potato Guide →</a>
+      <a class="btn btn-ghost-green" href="README.md">View Raw Docs</a>
+    </div>
+
+  </div>
+
+  <!-- RIGHT — ORANGE PI 5 -->
+  <div class="col">
+
+    <div class="step-group">
+      <p class="step-group-label">Hardware</p>
+      <div class="callout callout-blue">
+        <strong>Orange Pi 5 · RK3588S</strong><br>
+        4+4 core A76/A55 · 4–8GB LPDDR4X · Gigabit Ethernet · PCIe M.2
+      </div>
+      <div class="callout callout-blue">
+        <strong>OV13850 · 13MP MIPI Camera</strong><br>
+        Requires Device Tree overlay. Connects to CAM1 via FPC ribbon cable.
+      </div>
+      <div class="callout callout-orange">
+        <strong>Waveshare 3.5" HDMI LCD — Resistive touch</strong><br>
+        XPT2046 SPI controller. Kernel driver disabled — needs custom daemon.
+      </div>
+    </div>
+
+    <div class="step-group">
+      <p class="step-group-label">Setup steps</p>
+
+      <div class="step">
+        <div class="step-num num-b">1</div>
+        <div class="step-content">
+          <h3>Flash Ubuntu 22.04 XFCE image</h3>
+          <p>Official Orange Pi 5 image. Boot, login as <code style="display:inline;background:none;border:none;padding:0;color:var(--blue)">orangepi</code>.</p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num num-b">2</div>
+        <div class="step-content">
+          <h3>Enable Device Tree overlays</h3>
+          <p>Enables the MIPI camera and SPI4 bus. Use m0, not m1 — m1 breaks ethernet.</p>
+          <code class="blue">overlays=ov13850-c1 spi4-m0-cs1-spidev</code>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num num-b">3</div>
+        <div class="step-content">
+          <h3>Verify camera on /dev/video11</h3>
+          <code class="blue">dmesg | grep ov13850
+v4l2-ctl --list-devices</code>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num num-b">4</div>
+        <div class="step-content">
+          <h3>Build touch driver (3 patches needed)</h3>
+          <p>WiringOP for GPIO + ADS7846 daemon patched for software CS on pin 26.</p>
+          <code class="blue">sudo apt install libx11-dev libxtst-dev
+git clone .../WiringOP && ./build
+git clone .../ADS7846-X11-daemon
+# apply 3 patches → make → calibrate</code>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num num-b">5</div>
+        <div class="step-content">
+          <h3>Install Python dependencies</h3>
+          <code class="blue">sudo apt install python3-opencv</code>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num num-b">6</div>
+        <div class="step-content">
+          <h3>Run the camera app</h3>
+          <p>Full source code included in the guide. P=photo V=video S=settings Q=quit.</p>
+          <code class="blue">python3 camera_app.py /dev/video11</code>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout callout-orange">
+      <strong>⚠ FPC cable warning:</strong> The ribbon cable connecting the OV13850 is fragile
+      and the most common failure point. If the camera isn't detected, replace the cable first.
+    </div>
+
+    <div class="cta-row">
+      <a class="btn btn-blue" href="orange-pi5.html">Full Orange Pi 5 Guide →</a>
+      <a class="btn btn-ghost-blue" href="README.md">View Raw Docs</a>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── FOOTER ────────────────────────────────────────────── -->
+<footer>
+  <span>DIY Tender Camera · Luca &amp; René · October 2025</span>
+  <span>
+    <a href="https://github.com/renethoma/DIY-Tender-Camera-Guide">GitHub</a>
+    &nbsp;·&nbsp;
+    <a href="README.md">Full Documentation</a>
+    &nbsp;·&nbsp;
+    CC BY 4.0
+  </span>
+</footer>
+
+</body>
+</html>
